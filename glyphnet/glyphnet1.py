@@ -249,7 +249,7 @@ print(
 main_dataset = simple_triangles(PIXELS_FLATSIZE, RGB_CHANNELS, (RGB_SHAPE[0],RGB_SHAPE[1]), HOW_MANY_SAMPLES_SYNTHESIZED)
 print('synthesized %d samples' % HOW_MANY_SAMPLES_SYNTHESIZED)
 
-tf.set_random_seed(exper_params['seed1'])
+tf.random.set_seed(exper_params['seed1'])
 np.random.seed(exper_params['seed2'])
 
 

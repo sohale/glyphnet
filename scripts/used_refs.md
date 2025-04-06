@@ -22,9 +22,15 @@ Installation:
 * `pip install tensorflow `    `#`installed 2.19.0
 * `pip install tensorflow==2.19.0`
 * `pip install scipy imageio matplotlib scikit-image`
+* `pip install tensorflow-cpu==2.19.0`
 Run:
 * `python glyphnet/glyphnet1.py`
 * Note: No `source` command needed. CWD is repo root, e.g. `/dataneura/glyphnet/glyphnet`
+
+Interesting logs:
+```
+2025-04-06 20:12:48.140926: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+```
 
 # Deprecated notes
 
