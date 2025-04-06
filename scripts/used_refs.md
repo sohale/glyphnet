@@ -1,5 +1,32 @@
 notes.md
 
+## Run on Linux (Ubuntu on cloud)
+Choosing
+* python `3.14.0a6t` or `3.13.2t` or `3.13.1`? oops: It says: Python 3.8–3.11. O `3.12.9` worked.
+* TF2 `v2.19.0`
+
+
+https://www.tensorflow.org/install
+I=Also a dockerbsed solution exists, just in case it was needed:
+```bash
+ docker pull tensorflow/tensorflow:latest  # Download latest stable image
+ docker run -it -p 8888:8888 tensorflow/tensorflow:latest-jupyter  # Start Jupyter server
+```
+
+Provisionaing (one-off per dev machine)
+* `pyenv install 3.12.9`
+* `pyenv local 3.12.9`
+Installation:
+* `python --version`
+* `pip install --upgrade pip`
+* `pip install tensorflow `    `#`installed 2.19.0
+* `pip install tensorflow==2.19.0`
+* `pip install scipy imageio matplotlib scikit-image`
+Run:
+* `python glyphnet/glyphnet1.py`
+* Note: No `source` command needed. CWD is repo root, e.g. `/dataneura/glyphnet/glyphnet`
+
+# Deprecated notes
 
 ## Run on MacOS
 
