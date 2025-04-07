@@ -242,13 +242,13 @@ BATCHSIZE = 4 #2
 RF1 = int(4/2) #3
 RF2 = int(2/2)
 
-# input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
+# A KerasTensor:
 input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
 #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
 #output = reshp * 2
 
 
-# @tf.function
+@tf.function
 def make_model(input):
 
     set_metadata_bulk(W,H, input)
@@ -337,11 +337,6 @@ print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
 
 
 #=================================================
-# Instantiate the NN
-output = make_model(input)
-
-
-#=================================================
 # Running the NN
 
 """
@@ -359,6 +354,10 @@ sess.run( tf.global_variables_initializer() )
 
 graph_writer.close()
 """
+
+#=================================================
+# Instantiate the NN
+output = make_model(input)
 model = tf.keras.Model(inputs=input, outputs=output)
 model.compile(optimizer='adam', loss='mse')
 
