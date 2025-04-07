@@ -242,10 +242,6 @@ BATCHSIZE = 4 #2
 RF1 = int(4/2) #3
 RF2 = int(2/2)
 
-# A KerasTensor:
-input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
-#reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
-#output = reshp * 2
 
 
 @tf.function
@@ -330,6 +326,22 @@ def data_maker_geometrik(BATCHSIZE, shape, pixel_npdtype):
     #assert (FLATTENED_SIZE,) == images_training_batch.shape[1:]
     return np.reshape(images_training_batch, [BATCHSIZE, W,H,R3])
 
+
+
+
+
+@tf.function
+def augment(x):
+    # x: [batch, height, width, channels]
+    x = tf.image.random_flip_left_right(x)
+    x = tf.image.random_brightness(x, max_delta=0.1)
+    x = tf.image.random_contrast(x, lower=0.9, upper=1.1)
+    gnoise = tf.random.normal(shape=tf.shape(x), mean=0.0, stddev=0.05)
+    x = x + gnoise
+    x = tf.clip_by_value(x, 0.0, 1.0)
+    return x
+
+
 # data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
 data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
 
@@ -356,10 +368,22 @@ graph_writer.close()
 """
 
 #=================================================
+
+
+# A KerasTensor:
+input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
+#reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
+#output = reshp * 2
+
 # Instantiate the NN
 output = make_model(input)
+# like jMusic
 model = tf.keras.Model(inputs=input, outputs=output)
 model.compile(optimizer='adam', loss='mse')
+
+
+x_batch = augment(x_batch)
+loss = train_step(x_batch, y_batch)
 
 out_data = model(data_images_batch)
 
