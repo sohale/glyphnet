@@ -371,26 +371,26 @@ graph_writer.close()
 # Instantiate and run the NN once (forward mode)
 
 # must be suitable for symbolic inputs
-# def make_keras_model():
+def make_keras_model():
 
 
-# A symbolic) KerasTensor
-input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
-#reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
-#output = reshp * 2
+        # A symbolic) KerasTensor
+        input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
+        #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
+        #output = reshp * 2
 
-# Instantiate the NN
-output = make_nnetwork(input)
-# like jMusic
-model = tf.keras.Model(inputs=input, outputs=output)
-model.compile(optimizer='adam', loss='mse')
+        # Instantiate the NN
+        output = make_nnetwork(input)
+        # like jMusic
+        model = tf.keras.Model(inputs=input, outputs=output)
+        model.compile(optimizer='adam', loss='mse')
 
 
-
+# Feed the Keras-wrapped model with data that is augmented
 x_batch = augment(x_batch)
 loss = train_step(x_batch, y_batch)
 
-out_data = model(data_images_batch)
+out_data = make_keras_model(data_images_batch)
 
 # report the results
 print('Input: ---------------')
