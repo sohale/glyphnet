@@ -245,7 +245,7 @@ RF2 = int(2/2)
 
 
 @tf.function
-def make_model(input):
+def make_nnetwork(input):
 
     set_metadata_bulk(W,H, input)
 
@@ -368,18 +368,23 @@ graph_writer.close()
 """
 
 #=================================================
+# Instantiate and run the NN once (forward mode)
+
+# must be suitable for symbolic inputs
+# def make_keras_model():
 
 
-# A KerasTensor:
+# A symbolic) KerasTensor
 input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
 #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
 #output = reshp * 2
 
 # Instantiate the NN
-output = make_model(input)
+output = make_nnetwork(input)
 # like jMusic
 model = tf.keras.Model(inputs=input, outputs=output)
 model.compile(optimizer='adam', loss='mse')
+
 
 
 x_batch = augment(x_batch)
