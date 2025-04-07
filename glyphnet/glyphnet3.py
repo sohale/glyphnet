@@ -384,31 +384,34 @@ def make_keras_model():
         return model
 
 
-# def demo1():
-# data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
-data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
+def demo1():
+    # data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
+    data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
+    # numpy ^
 
-print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
+    print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
 
-# Feed the Keras-wrapped model with data that is augmented
-data_augimages_batch = augment(tf.convert_to_tensor(data_images_batch, dtype=PIXEL_DTYPE))
+    # Feed the Keras-wrapped model with data that is augmented
+    data_augimages_batch = augment(tf.convert_to_tensor(data_images_batch, dtype=PIXEL_DTYPE))
 
-loss = train_step(data_augimages_batch, y_batch)
+    ideal_y_batch = tf.convert_to_tensor(np.zeros((3,3,3)), dtype=PIXEL_DTYPE)
 
-# The key fix
-# model = make_keras_model()
-out_data = make_keras_model()(data_images_batch)
-# NOT: make_keras_model(data_images_batch)
+    loss = train_step(data_augimages_batch, ideal_y_batch)
 
-# report the results
-print('Input: ---------------')
-print(data_images_batch)
-print('Output: ---------------')
-print(out_data)
-print(out_data.numpy())
+    # The key fix
+    # model = make_keras_model()
+    out_data = make_keras_model()(data_images_batch)
+    # NOT: make_keras_model(data_images_batch)
 
-# 309
-print('weights:', weights_count)
+    # report the results
+    print('Input: ---------------')
+    print(data_images_batch)
+    print('Output: ---------------')
+    print(out_data)
+    print(out_data.numpy())
+
+    # 309
+    print('weights:', weights_count)
 
 
 
@@ -424,7 +427,9 @@ print('weights:', weights_count)
 def loss_fn(y_pred, y_true):
     return tf.reduce_mean(tf.square(y_pred - y_true))
 
-optimizer = tf.optimizers.SGD(learning_rate)
+LEARMING_RATE = 0.01
+
+optimizer = tf.optimizers.SGD(LEARMING_RATE)
 
 @tf.function
 def train_step(x, y_expected):
@@ -432,24 +437,39 @@ def train_step(x, y_expected):
 
     # input, expected_output
 
+    #FIX ME
+    model_ = make_keras_model()
+
     with tf.GradientTape() as tape:
-        y_pred = model(x)
+        y_pred = model_(x)
         loss = loss_fn(y_pred, y_expected)
     gradients = tape.gradient(loss, [W, b])
     optimizer.apply_gradients(zip(gradients, [W, b]))
     return loss
 
 
+def demo2_training():
 
-# Training loop
-for epoch in range(epochs):
-    idx = tf.random.shuffle(tf.range(len(X_data)))
-    for i in range(0, len(X_data), batch_size):
-        x_batch = tf.gather(X_data, idx[i:i+batch_size])
-        y_batch = tf.gather(Y_data, idx[i:i+batch_size])
-        loss = train_step(x_batch, y_batch)
-    if epoch % 100 == 0:
-        print(f"Epoch {epoch}: Loss = {loss.numpy():.4f}")
+    EPOCHS = 1000
+    BATCH_SIZE = 32
 
-# Final model parameters
-print(f"Learned W = {W.numpy().flatten()[0]:.4f}, b = {b.numpy().flatten()[0]:.4f}")
+    X_data = ...
+
+    # Training loop
+    for epoch in range(EPOCHS):
+        idx = tf.random.shuffle(tf.range(len(X_data)))
+        for i in range(0, len(X_data), BATCH_SIZE):
+            # gather: extract slice
+            #     tf.gather(params, indices, axis=0, batch_dims=0, name=None)
+            x_batch = tf.gather(X_data, idx[i:i+BATCH_SIZE])
+            y_batch = tf.gather(Y_data, idx[i:i+BATCH_SIZE])
+            loss = train_step(x_batch, y_batch)
+        if epoch % 100 == 0:
+            print(f"Epoch {epoch}: Loss = {loss.numpy():.4f}")
+
+    # Final model parameters
+    print(f"Learned W = {W.numpy().flatten()[0]:.4f}, b = {b.numpy().flatten()[0]:.4f}")
+
+
+demo1()
+demo2_training()
