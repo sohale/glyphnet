@@ -58,7 +58,7 @@ def get_element_metadata(layer_obj, inp_x,inp_y):
     metadata_content = d[key]
     if metadata_content is None:
         # spelling: "entry"
-        raise Exception("not found metadata enrty %r for %r" % (key, layer_obj))
+        raise Exception("Not set metadata entry %r for %r" % (key, layer_obj))
     return metadata_content
 
 def set_element_metadata(layer_obj, inp_x,inp_y, metadata_content):
@@ -93,8 +93,8 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
     # conv_spread_range = conv_offset_range
     (W,H,RGB3DIMS) = INPUT_SHAPE
     #print('input.shape for', lname, input.shape, ' asserting', tuple(input.shape[1:]), '==', (W,H,RGB3DIMS))
-    assert tuple(input.shape[1:]) == (W,H,RGB3DIMS), """ explicitl specified INPUT_SHAPE (size) = %r must match %s. """ % (INPUT_SHAPE, repr(input.shape[1:]))
-    # f"Explicitly specified INPUT_SHAPE (size) = {INPUT_SHAPE} must match {repr(input.shape[1:])}."
+    assert tuple(input.shape[1:]) == (W,H,RGB3DIMS), \
+      f"Explicitly specified INPUT_SHAPE (size) = {INPUT_SHAPE} must match {repr(input.shape[1:])}."
     global weights_count
 
     #print('OUT_RANGE', OUT_RANGE)
@@ -126,8 +126,7 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
     #assert W-RF1+1 > 0, """RF size %d does not fit in W=%d""" % (RF1, W)
     #assert H-RF1+1 > 0, """RF size %d does not fit in H=%d""" % (RF1, H)
 
-    assert RF1 > 1, """ no point in convolution with RF=%d < 2 """ %(RF1)
-    # f"No point in convolution with RF={RF1} < 2."
+    assert RF1 > 1, f"No point in convolution with RF={RF1} < 2."
 
     # classes of variables:
     #   * trainable:          at AdamOptimiser()
@@ -250,49 +249,53 @@ input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
 
 
 # @tf.function
-# def model(input):
+def make_model(input):
 
-set_metadata_bulk(W,H, input)
+    set_metadata_bulk(W,H, input)
 
-weights_count = 0
+    weights_count = 0
 
-nonlinearity1 = tf.nn.relu
-#nonlinearity1 = tf.sigmoid
-print('L1')
-L0_SHAPE = (W,H,RGB3DIMS)
+    nonlinearity1 = tf.nn.relu
+    #nonlinearity1 = tf.sigmoid
+    print('L1')
+    L0_SHAPE = (W,H,RGB3DIMS)
 
 
-#shape_div(L0_SHAPE,1,1),
-layer_h1 = make_conv_rf(input, L0_SHAPE, (-RF1,RF1),   (1,1), tf.nn.relu, lname='H1')
-print('L1>>>', layer_h1.shape)
-L1_SHAPE = shape_div(layer_h1.shape[1:], 1,1)
-#shape_div(L1_SHAPE,1,1),
-layer_h2 = make_conv_rf(layer_h1, L1_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H2')
-print('L2>>>', layer_h2.shape)
-L2_SHAPE = shape_div(layer_h2.shape[1:], 1,1)
-#L2OUT_SHAPE = shape_div(L2_SHAPE,2,1)  # shape_div(L0_SHAPE,2,2)
- #???
-#shape_div(L2_SHAPE,2,1),
-layer_h3 = make_conv_rf(layer_h2, L2_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H3')
-print('L3>>>', layer_h3.shape)
-L3_SHAPE = shape_div(layer_h3.shape[1:], 1,1) #shape_div(L0_SHAPE, 4,1)
-#L3OUT_SHAPE = shape_div(L0_SHAPE,4,1) # shape_div(L0_SHAPE,4,4)
-#shape_div(L3_SHAPE,2,1),
-layer_h4 = make_conv_rf(layer_h3, L3_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H4')
-print('L4>>>', layer_h4.shape)
+    #shape_div(L0_SHAPE,1,1),
+    layer_h1 = make_conv_rf(input, L0_SHAPE, (-RF1,RF1),   (1,1), tf.nn.relu, lname='H1')
+    print('L1>>>', layer_h1.shape)
+    L1_SHAPE = shape_div(layer_h1.shape[1:], 1,1)
+    #shape_div(L1_SHAPE,1,1),
+    layer_h2 = make_conv_rf(layer_h1, L1_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H2')
+    print('L2>>>', layer_h2.shape)
+    L2_SHAPE = shape_div(layer_h2.shape[1:], 1,1)
+    #L2OUT_SHAPE = shape_div(L2_SHAPE,2,1)  # shape_div(L0_SHAPE,2,2)
+    #???
+    #shape_div(L2_SHAPE,2,1),
+    layer_h3 = make_conv_rf(layer_h2, L2_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H3')
+    print('L3>>>', layer_h3.shape)
+    L3_SHAPE = shape_div(layer_h3.shape[1:], 1,1) #shape_div(L0_SHAPE, 4,1)
+    #L3OUT_SHAPE = shape_div(L0_SHAPE,4,1) # shape_div(L0_SHAPE,4,4)
+    #shape_div(L3_SHAPE,2,1),
+    layer_h4 = make_conv_rf(layer_h3, L3_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H4')
+    print('L4>>>', layer_h4.shape)
 
-if False:
-    print(input.shape, '->', layer_h1.shape)
-    print(layer_h1.shape, '->', layer_h2.shape)
+    if False:
+        print(input.shape, '->', layer_h1.shape)
+        print(layer_h1.shape, '->', layer_h2.shape)
 
-    print(input[0,0,0])
-    print(input[0,0,0,0])
-    print(input[-1,0,0,0]) # no
-    print(input[:, 0,0,0]) # Tensor("strided_slice_17:0", shape=(?,), dtype=uint8)
+        print(input[0,0,0])
+        print(input[0,0,0,0])
+        print(input[-1,0,0,0]) # no
+        print(input[:, 0,0,0]) # Tensor("strided_slice_17:0", shape=(?,), dtype=uint8)
 
-output = layer_h4 * 2
-if False:
-    print('layer_h1', layer_h1) # shape=(?, 6, 3) = (?, W*H, 3)
+    output = layer_h4 * 2
+    if False:
+        print('layer_h1', layer_h1) # shape=(?, 6, 3) = (?, W*H, 3)
+
+    return output
+
+
 
 #==================================================
 # input data
@@ -334,7 +337,12 @@ print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
 
 
 #=================================================
-# running the NN
+# Instantiate the NN
+output = make_model(input)
+
+
+#=================================================
+# Running the NN
 
 """
 sess = tf.Session()
