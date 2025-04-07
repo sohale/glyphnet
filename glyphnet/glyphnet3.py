@@ -403,8 +403,41 @@ print(out_data.numpy())
 print('weights:', weights_count)
 
 
-"""
+
+# ===============
+# Training
+
+
 @tf.function
-def train_step(input):
-    ...
-"""
+def loss_fn(y_pred, y_true):
+    return tf.reduce_mean(tf.square(y_pred - y_true))
+
+optimizer = tf.optimizers.SGD(learning_rate)
+
+@tf.function
+def train_step(x, y_expected):
+    # each step: one step
+
+    # input, expected_output
+
+    with tf.GradientTape() as tape:
+        y_pred = model(x)
+        loss = loss_fn(y_pred, y_expected)
+    gradients = tape.gradient(loss, [W, b])
+    optimizer.apply_gradients(zip(gradients, [W, b]))
+    return loss
+
+
+
+# Training loop
+for epoch in range(epochs):
+    idx = tf.random.shuffle(tf.range(len(X_data)))
+    for i in range(0, len(X_data), batch_size):
+        x_batch = tf.gather(X_data, idx[i:i+batch_size])
+        y_batch = tf.gather(Y_data, idx[i:i+batch_size])
+        loss = train_step(x_batch, y_batch)
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss = {loss.numpy():.4f}")
+
+# Final model parameters
+print(f"Learned W = {W.numpy().flatten()[0]:.4f}, b = {b.numpy().flatten()[0]:.4f}")
