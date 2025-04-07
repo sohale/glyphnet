@@ -342,10 +342,6 @@ def augment(x):
     return x
 
 
-# data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
-data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
-
-print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
 
 
 #=================================================
@@ -373,7 +369,6 @@ graph_writer.close()
 # must be suitable for symbolic inputs
 def make_keras_model():
 
-
         # A symbolic) KerasTensor
         input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
         #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
@@ -385,12 +380,26 @@ def make_keras_model():
         model = tf.keras.Model(inputs=input, outputs=output)
         model.compile(optimizer='adam', loss='mse')
 
+        return model
+
+
+
+# data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
+data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
+
+print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
+
+
 
 # Feed the Keras-wrapped model with data that is augmented
-x_batch = augment(x_batch)
-loss = train_step(x_batch, y_batch)
+data_augimages_batch = augment(tf.convert_to_tensor(data_images_batch))
 
-out_data = make_keras_model(data_images_batch)
+loss = train_step(data_augimages_batch, y_batch)
+
+# The key fix
+# model = make_keras_model()
+out_data = make_keras_model()(data_images_batch)
+# NOT: make_keras_model(data_images_batch)
 
 # report the results
 print('Input: ---------------')
@@ -407,6 +416,10 @@ print('weights:', weights_count)
 # ===============
 # Training
 
+
+# @tf.function
+# compiles the funciotn into a [callable] TensorFlow graph
+# Dont use with symbolic inputs
 
 @tf.function
 def loss_fn(y_pred, y_true):
