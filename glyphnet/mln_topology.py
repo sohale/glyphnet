@@ -1,7 +1,15 @@
 #!/usr/bin/python3
 
+# Does not use Tensorflow directly. No TF dependence.
 import numpy as np
 from matrixll import matrixll
+
+
+class PRUNING:
+    """ Keep or prune Connection: consts for readability """
+    KEEP = True
+    PRUNE = False
+
 
 class MLNTopology():
     INDEX_INT_TYPE = int
@@ -236,6 +244,7 @@ class MLNTopology():
                 coord_next = coords_next[i_next]
                 coord_prev = coords_prev[j_prev]
                 # apply synaptic prune rule for connectivity:
+                assert PRUNING.KEEP == True and PRUNING.PRUNE == False
                 if not prune_rule(coord_prev, coord_next):
                     conn_obj = 1
                     self.connect(prev_layer_no, j_prev, i_next, conn_obj, check=False)
@@ -309,10 +318,13 @@ def connect_based_on_distance(topo, prev_layer_no, next_layer_no, radius):
     # radius = 3.0
     topo.connect_all(prev_layer_no, next_layer_no,
         lambda coord1, coord2:
+            PRUNING.KEEP if
             (coord1[_X] - coord2[_X]) ** 2 +
             (coord1[_Y] - coord2[_Y]) ** 2
             >
             radius ** 2
+            else PRUNING.PRUNE
+            # todo: True means keep connection!
     )
 
 MLNTopology.connect_based_on_distance = connect_based_on_distance

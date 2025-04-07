@@ -38,7 +38,7 @@ class matrixll:
 
             for y in range(h):
                 elem = m[x][y]
-                assert (elem is None) or (elem is 1)
+                assert (elem is None) or (elem == 1)
 
     @staticmethod
     def create_matrixll(w,h, default_value):

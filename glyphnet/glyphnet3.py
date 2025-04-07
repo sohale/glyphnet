@@ -4,23 +4,30 @@
 """
 Version 2:
    Relatively Sparse synapses: local connections only at Receptive Fields.
+Versoin 3:
+    Same, but TF2.
 
 To run:
-    python glyphnet2.py; tensorboard --logdir="./graph"
+    python glyphnet3.py; tensorboard --logdir="./graph"
 """
 import mln_topology
 MLNTopology = mln_topology.MLNTopology
 
 import wireup_mltopology
 
-exit()
+# exit()
 
 import tensorflow as tf
 import numpy as np
 import time
+"""
 import scipy.misc
 import imageio
+"""
 import math
+
+from typing import List
+from typing import TypeVar, Generic
 
 from utils.pcolor import PColor
 
@@ -28,6 +35,8 @@ from utils import image_loader #import choose_random_batch
 choose_random_batch = image_loader.choose_random_batch
 from geo_maker import geometry_maker #import simple_triangles
 simple_triangles = geometry_maker.simple_triangles
+# from geo_maker.geometry_maker import simple_triangles
+# from utils.image_loader import choose_random_batch
 
 #from mln_topology import MLNTopology
 import mln_topology
@@ -48,6 +57,7 @@ def get_element_metadata(layer_obj, inp_x,inp_y):
     key = (inp_x,inp_y)
     metadata_content = d[key]
     if metadata_content is None:
+        # spelling: "entry"
         raise Exception("not found metadata enrty %r for %r" % (key, layer_obj))
     return metadata_content
 
@@ -75,6 +85,7 @@ def set_metadata_bulk(W,H, input):
 
 # PIXEL_DTYPE = tf.uint8
 PIXEL_DTYPE = tf.float32
+# Hidden Layer's dtype
 HL_DTYPE = tf.float32
 WEIGHT_DTYPE = tf.float32
 
@@ -87,12 +98,16 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
     (W,H,RGB3DIMS) = INPUT_SHAPE
     #print('input.shape for', lname, input.shape, ' asserting', tuple(input.shape[1:]), '==', (W,H,RGB3DIMS))
     assert tuple(input.shape[1:]) == (W,H,RGB3DIMS), """ explicitl specified INPUT_SHAPE (size) = %r must match %s. """ % (INPUT_SHAPE, repr(input.shape[1:]))
+    # f"Explicitly specified INPUT_SHAPE (size) = {INPUT_SHAPE} must match {repr(input.shape[1:])}."
     global weights_count
 
     #print('OUT_RANGE', OUT_RANGE)
     #(Wout, Hout, chans_out) = OUT_RANGE
+
     Wout = int((W + stride_xy[0]-1)/stride_xy[0])*stride_xy[0]
     Hout = int((H + stride_xy[1]-1)/stride_xy[1])*stride_xy[1]
+
+
     # RF1 -> conv_spread_range
 
     assert isinstance(INPUT_SHAPE[0], int)
@@ -116,13 +131,15 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
     #assert H-RF1+1 > 0, """RF size %d does not fit in H=%d""" % (RF1, H)
 
     assert RF1 > 1, """ no point in convolution with RF=%d < 2 """ %(RF1)
+    # f"No point in convolution with RF={RF1} < 2."
 
     # classes of variables:
     #   * trainable:          at AdamOptimiser()
     #   * placeholder:        at sess.run()
     #   * initialisation-time assignable (at sess.run() via tf.global_variables_initializer()  )
 
-    with tf.variable_scope('L'+lname):
+    with tf.name_scope('L' + lname):
+
       ll = []
       # (x,y) are the unique indices of the output
       # note: the smaller range has nothing to do with the next layer shrinking smaller.
@@ -131,9 +148,10 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
       for x in range(0, Wout, stride_xy[0]):
         for y in range(0, Hout, stride_xy[1]):
           cuname1 = "x%dy%d"%(x,y)
-          with tf.variable_scope(cuname1):
+          with tf.name_scope(cuname1):
             #for c in range(RGB3DIMS):
             #suminp = None
+            #suminp = tf.constant(0.0, dtype=HL_DTYPE)
             suminp = 0.0
             for dx in range(conv_spread_range[0], conv_spread_range[1]+1, 1):
                 for dy in range(conv_spread_range[0], conv_spread_range[1]+1, 1):
@@ -146,8 +164,9 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
                         continue
                     assert H == input.shape[2]
                     v1 = input[:, inp_x,inp_y, :]
+                    # not used yet:
                     (x,y,c) = get_element_metadata(input, inp_x,inp_y)
-                    randinitval = tf.random_uniform([1], -1, 1, seed=0)  # doesn accept trainable=False,
+                    randinitval = tf.random.uniform([1], -1, 1, seed=0)  # doesn accept trainable=False,
                     w1 = tf.Variable(initial_value=randinitval, trainable=True, dtype=WEIGHT_DTYPE)
                     weights_count += 1
                     #if suminp is None:
@@ -162,6 +181,7 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
 
             #ll += [v1[:, None, :]]
             ll += [conv_unit_outp[:, None, :]] # prepare for row-like structure
+
       layer_h1 = tf.concat(ll, axis=1) # row: (W*H) x RGB3
 
       NEWRESHAPE = [-1, int(Wout/stride_xy[0]), int(Hout/stride_xy[1]), RGB3DIMS]
@@ -175,10 +195,6 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
 
 
 # =================================================
-from typing import List
-from typing import TypeVar, Generic
-
-
 
 def build_tf_network(topology: MLNTopology):
     pass
@@ -187,6 +203,7 @@ def build_tf_network(topology: MLNTopology):
 # Fixme: the RGB needs to annihilate at level 1
 # The level2 needs to have a quasi-location: based on which we define a distance.
 #  Pne way is to have another factor instead of 3 of RGB. This means expantion of dimensions (as in LGN to V1)
+
 RGB3DIMS = 1
 W = 5 #15
 H = 5 #15
@@ -196,9 +213,11 @@ BATCHSIZE = 4 #2
 RF1 = int(4/2) #3
 RF2 = int(2/2)
 
-input = tf.placeholder(PIXEL_DTYPE, [None, W, H, RGB3DIMS], name='i1')
+# input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
+input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
 #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
 #output = reshp * 2
+
 set_metadata_bulk(W,H, input)
 
 weights_count = 0
@@ -207,7 +226,23 @@ nonlinearity1 = tf.nn.relu
 #nonlinearity1 = tf.sigmoid
 print('L1')
 L0_SHAPE = (W,H,RGB3DIMS)
+
 def shape_div(L0_SHAPE, m, n):
+    """
+
+    Decimaiton: Divide by m, extra: upsample by n.
+
+    Each Layer's "shape" is formed like W×H×M
+    However, to match, we need to fit the input ones to a multiple of m
+    Then, upsample n times. Isn't it a strange strategy? What were I thinking?
+
+    Given W,H (via L0_SHAPE)
+    Suggests a shape,
+    m/n.
+
+    L0_SHAPE, is a 2D shape: (W,H,channels)
+    """
+
     W = int(L0_SHAPE[0])
     H = int(L0_SHAPE[1])
     CH = int(L0_SHAPE[2])
@@ -222,6 +257,7 @@ layer_h2 = make_conv_rf(layer_h1, L1_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname=
 print('L2>>>', layer_h2.shape)
 L2_SHAPE = shape_div(layer_h2.shape[1:], 1,1)
 #L2OUT_SHAPE = shape_div(L2_SHAPE,2,1)  # shape_div(L0_SHAPE,2,2)
+ #???
 #shape_div(L2_SHAPE,2,1),
 layer_h3 = make_conv_rf(layer_h2, L2_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H3')
 print('L3>>>', layer_h3.shape)
@@ -230,8 +266,6 @@ L3_SHAPE = shape_div(layer_h3.shape[1:], 1,1) #shape_div(L0_SHAPE, 4,1)
 #shape_div(L3_SHAPE,2,1),
 layer_h4 = make_conv_rf(layer_h3, L3_SHAPE, (-3, 3),   (2,2), tf.nn.relu, lname='H4')
 print('L4>>>', layer_h4.shape)
-
-
 
 if False:
     print(input.shape, '->', layer_h1.shape)
@@ -262,6 +296,7 @@ def data_maker_fake(BATCHSIZE, shape, pixel_npdtype):
     img_shape1W = (1, H, RGB3DIMS)
     data_img_2 = np.tile( row123W[:,None,None], img_shape1W)
     data_img = data_img_1 + data_img_2*100
+    # 100?
 
     print(np.mean(data_img, axis=2))
     data_images_batch = np.tile( data_img_1[None, :,:,:], [BATCHSIZE, 1,1,1])
@@ -279,13 +314,15 @@ def data_maker_geometrik(BATCHSIZE, shape, pixel_npdtype):
     return np.reshape(images_training_batch, [BATCHSIZE, W,H,R3])
 
 # data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
-data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), np.float)
+data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
 
 print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
+
 
 #=================================================
 # running the NN
 
+"""
 sess = tf.Session()
 
 # For Tesnorboard. tensorboard --logdir="./graph" # http://localhost:6006/
@@ -299,13 +336,25 @@ sess.run( tf.global_variables_initializer() )
     sess.run([output], feed_dict={input: data_images_batch})
 
 graph_writer.close()
+"""
+model = tf.keras.Model(inputs=input, outputs=output)
+model.compile(optimizer='adam', loss='mse')
 
+out_data = model(data_images_batch)
 
 # report the results
 print('Input: ---------------')
 print(data_images_batch)
 print('Output: ---------------')
 print(out_data)
+print(out_data.numpy())
 
 # 309
 print('weights:', weights_count)
+
+
+"""
+@tf.function
+def train_step(input):
+    ...
+"""
