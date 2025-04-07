@@ -332,6 +332,7 @@ def data_maker_geometrik(BATCHSIZE, shape, pixel_npdtype):
 
 @tf.function
 def augment(x):
+    print(x)
     # x: [batch, height, width, channels]
     x = tf.image.random_flip_left_right(x)
     x = tf.image.random_brightness(x, max_delta=0.1)
@@ -383,16 +384,14 @@ def make_keras_model():
         return model
 
 
-
+# def demo1():
 # data_images_batch = data_maker_fake(BATCHSIZE, (W,H,RGB3DIMS), np.float)
 data_images_batch = data_maker_geometrik(BATCHSIZE, (W,H,RGB3DIMS), PIXEL_DTYPE)
 
 print('(W,H,RGB3DIMS)', (W,H,RGB3DIMS))
 
-
-
 # Feed the Keras-wrapped model with data that is augmented
-data_augimages_batch = augment(tf.convert_to_tensor(data_images_batch))
+data_augimages_batch = augment(tf.convert_to_tensor(data_images_batch, dtype=PIXEL_DTYPE))
 
 loss = train_step(data_augimages_batch, y_batch)
 
