@@ -83,11 +83,7 @@ def set_metadata_bulk(W,H, input):
 
 #=================================================
 
-# PIXEL_DTYPE = tf.uint8
-PIXEL_DTYPE = tf.float32
-# Hidden Layer's dtype
-HL_DTYPE = tf.float32
-WEIGHT_DTYPE = tf.float32
+
 
 global weights_count
 weights_count = 0
@@ -193,12 +189,46 @@ def make_conv_rf(input, INPUT_SHAPE, conv_spread_range, stride_xy, nonlinearity1
 
     # why input has 54 outputs, while there are 25 elements only.
 
+# =================================================
+
+
+def shape_div(L0_SHAPE, m, n):
+    """
+
+    A helper for:
+    Decimaiton: Divide by m, extra: upsample by n.
+
+    Each Layer's "shape" is formed like W×H×M
+    However, to match, we need to fit the input ones to a multiple of m
+    Then, upsample n times. Isn't it a strange strategy? What were I thinking?
+
+    Given W,H (via L0_SHAPE)
+    Suggests a shape,
+    m/n.
+
+    L0_SHAPE, is a 2D shape: (W,H,channels)
+    """
+
+    W = int(L0_SHAPE[0])
+    H = int(L0_SHAPE[1])
+    CH = int(L0_SHAPE[2])
+    return (math.ceil(W/m)*n, math.ceil(H/m)*n, CH)
 
 # =================================================
 
 def build_tf_network(topology: MLNTopology):
     pass
 # =================================================
+
+
+
+# PIXEL_DTYPE = tf.uint8
+PIXEL_DTYPE = tf.float32
+# Hidden Layer's dtype
+HL_DTYPE = tf.float32
+WEIGHT_DTYPE = tf.float32
+
+
 
 # Fixme: the RGB needs to annihilate at level 1
 # The level2 needs to have a quasi-location: based on which we define a distance.
@@ -218,6 +248,10 @@ input = tf.keras.Input(shape=(W, H, RGB3DIMS), dtype=PIXEL_DTYPE, name='i1')
 #reshp = tf.reshape(input, [UNKNOWN_SIZE, W*H, RGB3DIMS])
 #output = reshp * 2
 
+
+# @tf.function
+# def model(input):
+
 set_metadata_bulk(W,H, input)
 
 weights_count = 0
@@ -227,26 +261,6 @@ nonlinearity1 = tf.nn.relu
 print('L1')
 L0_SHAPE = (W,H,RGB3DIMS)
 
-def shape_div(L0_SHAPE, m, n):
-    """
-
-    Decimaiton: Divide by m, extra: upsample by n.
-
-    Each Layer's "shape" is formed like W×H×M
-    However, to match, we need to fit the input ones to a multiple of m
-    Then, upsample n times. Isn't it a strange strategy? What were I thinking?
-
-    Given W,H (via L0_SHAPE)
-    Suggests a shape,
-    m/n.
-
-    L0_SHAPE, is a 2D shape: (W,H,channels)
-    """
-
-    W = int(L0_SHAPE[0])
-    H = int(L0_SHAPE[1])
-    CH = int(L0_SHAPE[2])
-    return (math.ceil(W/m)*n, math.ceil(H/m)*n, CH)
 
 #shape_div(L0_SHAPE,1,1),
 layer_h1 = make_conv_rf(input, L0_SHAPE, (-RF1,RF1),   (1,1), tf.nn.relu, lname='H1')
